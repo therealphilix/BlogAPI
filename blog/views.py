@@ -18,6 +18,18 @@ class PostViewSet(ModelViewSet):
     filterset_class = PostFilter
     permission_classes = [IsAuthenticatedOrReadOnly]
 
+    @action(detail=False, methods=['GET'])
+    def me(self, request):
+        user = request.user
+        author = Author.objects.get(user=user)
+        
+        serializer = PostSerializer(post, many=True)
+        if request.method == 'GET':
+            post = Post.objects.filter(author_id=author.id)
+            return Response(serializer.data)
+        
+        
+
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
             return UpdatePostSerializer
@@ -38,10 +50,10 @@ class PostViewSet(ModelViewSet):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         try:
-            author = Author.objects.get(user_id=self.request.user.id)
+            author = Author.objects.get(user=self.request.user)
         except Author.DoesNotExist:
             author = None  # Handle this scenario appropriately
-        context['author'] = author
+        context['author_id'] = author.id
         return context
 
 class AuthorViewSet(ModelViewSet):
